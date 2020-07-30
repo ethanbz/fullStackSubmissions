@@ -23,7 +23,7 @@ const App = () => {
     setMessage(msg);
     setTimeout(() => {
       setMessage(null);
-    }, 5000)
+    }, 15000)
   }
 
   useEffect(() => {
@@ -45,7 +45,10 @@ const App = () => {
           .then(info => handleMessage(`number for ${newName} has been updated`)).catch(err => handleMessage(`Information for ${newName} has already been removed from the server`))
       }
     } else service.add(personObj).then(info => setPersons(persons.concat(info)))
-            .then(info => handleMessage(`${newName} has been added`)).catch(err => handleMessage(`Error: could not add ${newName}`))
+            .then(info => handleMessage(`${newName} has been added`)).catch(err => {
+              handleMessage(`Error: could not add ${newName} ---- ${err.response.data.error}`)
+              console.log(err.response)
+            })
     setNewName('');
     setNewNumber('');
   }
