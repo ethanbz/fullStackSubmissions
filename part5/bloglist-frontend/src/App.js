@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Blog from './components/Blog'
+import LoginForm from './components/LoginForm'
+import BlogForm from './components/BlogForm'
 import blogService from './services/blogs'
 import loginService from './services/login'
 
@@ -8,18 +10,16 @@ const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  const [blogform, setBlogform] = useState(false)
+  const [blogFormVisible, setBlogFormVisible] = useState(false)
+  const [loginVisible, setLoginVisible] = useState(false)
   const [message, setMessage] = useState('')
 
-  const [title, setTitle] = useState('')
-  const [author, setAuthor] = useState('')
-  const [url, setUrl] = useState('')
-  
+
   useEffect(() => {
     blogService.getAll().then(blogs =>
       setBlogs( blogs )
-    )  
-  }, [, blogform===false])
+    )
+  }, [blogFormVisible===false, message==='blog liked', message==='blog deleted'])
 
   useEffect(() => {
     const userJSON = window.localStorage.getItem('loggedUser')
@@ -51,68 +51,68 @@ const App = () => {
     setUser(null)
   }
 
-  const handlePostBlog = async (e) => {
-    e.preventDefault()
+  const postBlog = async (newBlog) => {
     try {
-    const res = await blogService.postNew({ title, author, url })
-    if (res.status === 201) {
-      setTitle('')
-      setAuthor('')
-      setUrl('')
-      console.log(res)
-      setBlogform(false)
-      setMessage('blog successfuly posted!')
-    }
-  } catch (error) {
-    console.log(error)
+      const res = await blogService.postNew(newBlog)
+      if (res.status === 201) {
+        console.log(res)
+        setMessage('blog successfuly posted!')
+        return true
+      }
+    } catch (error) {
+      console.log(error)
       setMessage('error posting blog')
-  }
-    
+      return false
+    }
+
   }
 
-  const loginForm = () => (
-    <form onSubmit={handleLogin}>
-      <h2>log in to application</h2>
+  const loginForm = () => {
+
+    return (
       <div>
-        username
-        <input type='text' value={username} name='Username' onChange={({ target }) => setUsername(target.value)} />
+        {!loginVisible ?
+          <div>
+            <button onClick={() => setLoginVisible(true)}>log in</button>
+          </div>
+          : <div>
+            <LoginForm
+              username={username}
+              password={password}
+              handleLogin={handleLogin}
+              handleUsernameChange={({ target }) => setUsername(target.value)}
+              handlePasswordChange={({ target }) => setPassword(target.value)}
+            />
+            <button onClick={() => setLoginVisible(false)}>cancel</button>
+          </div>
+        }
       </div>
-      <div>
-        password
-        <input type='password' value={password} name='Password' onChange={({ target }) => setPassword(target.value)} />
-      </div>
-      <button type='submit'>login</button>
-    </form>
-  )
+    )
+  }
+
+  const handleLike = async (blog) => {
+    await blogService.likeBlog(blog)
+    setMessage('blog liked')
+  }
+
+  const handleDelete = async (blog) => {
+    if (window.confirm(`delete ${blog.title}?`)) {
+      await blogService.remove(blog)
+      setMessage('blog deleted')
+    }
+  }
 
   const blogForm = () => (
-    <div>
-      <h2>create new</h2>
-      <form onSubmit={handlePostBlog}>
-        <div>
-          title:
-          <input type='text' name='Title' onChange={({ target }) => setTitle(target.value)} />
-        </div>
-        <div>
-          author:
-          <input type='text' name='Author' onChange={({ target }) => setAuthor(target.value)} />
-        </div>
-        <div>
-          url:
-          <input type='text' name="Url" onChange={({ target }) => setUrl(target.value)} />
-        </div>
-        <button type='submit'>create</button>
-      </form>
-    </div>
+    <BlogForm postBlog={postBlog} setBlogFormVisible={setBlogFormVisible} />
   )
 
   const bloglist = () => (
     <div>
       <h2>blogs</h2>
-      <p>{user.name} logged-in <button onClick={handleLogout}>logout</button> </p> 
-      {blogform ? blogForm() : <button onClick={() => setBlogform(!blogform)}>create new blog</button>}
-      {blogs.map(blog =>
-        <Blog key={blog.id} blog={blog} />
+      <p>{user.name} logged-in <button onClick={handleLogout}>logout</button> </p>
+      {blogFormVisible ? blogForm() : <button onClick={() => setBlogFormVisible(!blogFormVisible)}>create new blog</button>}
+      {blogs.sort((a, b) => (a.likes > b.likes) ? -1 : 1).map(blog =>
+        <Blog key={blog.id} blog={blog} user={user} likeBlog={handleLike} deleteBlog={handleDelete} />
       )}
     </div>
   )
@@ -122,9 +122,9 @@ const App = () => {
       setMessage('')
     }, 5000)
     return (
-    <div style={{color: 'blue', fontSize: 24}}>
-    {message}
-    </div>
+      <div style={{ color: 'blue', fontSize: 24 }}>
+        {message}
+      </div>
     )
   }
 
