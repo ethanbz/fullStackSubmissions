@@ -108,7 +108,6 @@ const App = () => {
 
   const bloglist = () => (
     <div>
-      <h2>blogs</h2>
       <p>{user.name} logged-in <button onClick={handleLogout}>logout</button> </p>
       {blogFormVisible ? blogForm() : <button onClick={() => setBlogFormVisible(!blogFormVisible)}>create new blog</button>}
       {blogs.sort((a, b) => (a.likes > b.likes) ? -1 : 1).map(blog =>
@@ -130,6 +129,7 @@ const App = () => {
 
   return (
     <div>
+      <h2>blogs</h2>
       {message && notification()}
       {user === null ? loginForm() : bloglist()}
     </div>
