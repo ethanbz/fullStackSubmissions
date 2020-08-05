@@ -1,11 +1,4 @@
-const anecdotesAtStart = [
-  'If it hurts, do it more often',
-  'Adding manpower to a late software project makes it later!',
-  'The first 90 percent of the code accounts for the first 90 percent of the development time...The remaining 10 percent of the code accounts for the other 90 percent of the development time.',
-  'Any fool can write code that a computer can understand. Good programmers write code that humans can understand.',
-  'Premature optimization is the root of all evil.',
-  'Debugging is twice as hard as writing the code in the first place. Therefore, if you write the code as cleverly as possible, you are, by definition, not smart enough to debug it.'
-]
+import anecdoteService from '../services/anecdotes'
 
 const getId = () => (100000 * Math.random()).toFixed(0)
 
@@ -17,35 +10,51 @@ const asObject = (anecdote) => {
   }
 }
 
-const initialState = anecdotesAtStart.map(anecdote => asObject(anecdote))
 
-const anecdoteReducer = (state = initialState, action) => {
+const anecdoteReducer = (state = [], action) => {
   switch(action.type) {
     case 'VOTE': 
-      const id = action.data.id
-      const anecdote = state.find(an => an.id === id)
-      const changedAnecdote = { ...anecdote, votes: anecdote.votes + 1}
-      return state.map(an => an.id !== id ? an : changedAnecdote).sort((a, b) => a.votes > b.votes ? -1 : 1)
+      const changedAnecdote = action.data
+      return state.map(an => an.id !== changedAnecdote.id ? an : changedAnecdote).sort((a, b) => a.votes > b.votes ? -1 : 1)
     case 'NEW':
-      const newAnecdote = asObject(action.data.content)
+      const newAnecdote = action.data
       return state.concat(newAnecdote)
+    case 'INIT':
+      return action.data
   }
 
   return state
 }
 
-export const voteAnecdote = (id) => {
-  return {
-    type: 'VOTE',
-    data: {id}
+export const voteAnecdote = (anecdote) => {
+  return async dispatch => {
+    const changedAnecdote = await anecdoteService.addVote({...anecdote, votes: anecdote.votes + 1})
+    dispatch({
+      type: 'VOTE',
+      data: changedAnecdote
+    })
   }
 }
 
 export const newAnecdote = (content) => {
-  return {
-    type: 'NEW',
-    data: {content}
+  return async dispatch => {
+    const newAnecdote = await anecdoteService.addNew(asObject(content))
+    dispatch({
+      type: 'NEW',
+      data: newAnecdote
+    })
   }
+}
+
+export const initializeAnecdotes = () => {
+  return async dispatch => {
+    const anecdotes = await anecdoteService.getAll()
+    dispatch({
+      type: 'INIT',
+      data: anecdotes
+    })
+    
+  } 
 }
 
 export default anecdoteReducer
