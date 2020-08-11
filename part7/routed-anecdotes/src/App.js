@@ -3,6 +3,8 @@ import {
   Switch, Route, Link, useRouteMatch, useHistory
 } from 'react-router-dom'
 
+import { useField } from './hooks/index'
+
 
 const Menu = () => {
   const padding = {
@@ -57,21 +59,27 @@ const Footer = () => (
 )
 
 const CreateNew = (props) => {
-  const [content, setContent] = useState('')
-  const [author, setAuthor] = useState('')
-  const [info, setInfo] = useState('')
+  const content = useField('text')
+  const author = useField('text')
+  const info = useField('text')
   const history = useHistory()
 
 
   const handleSubmit = (e) => {
     e.preventDefault()
     props.addNew({
-      content,
-      author,
-      info,
+      content: content.value,
+      author: author.value,
+      info: info.value,
       votes: 0
     })
     history.push('/')
+  }
+
+  const handleReset = () => {
+    content.reset()
+    author.reset()
+    info.reset()
   }
 
   return (
@@ -80,17 +88,18 @@ const CreateNew = (props) => {
       <form onSubmit={handleSubmit}>
         <div>
           content
-          <input name='content' value={content} onChange={(e) => setContent(e.target.value)} />
+          <input { ...content } reset=''/>
         </div>
         <div>
           author
-          <input name='author' value={author} onChange={(e) => setAuthor(e.target.value)} />
+          <input { ...author } reset=''/>
         </div>
         <div>
           url for more info
-          <input name='info' value={info} onChange={(e)=> setInfo(e.target.value)} />
+          <input { ...info } reset=''/>
         </div>
         <button>create</button>
+        <button type='reset' onClick={handleReset}>reset</button>
       </form>
     </div>
   )
